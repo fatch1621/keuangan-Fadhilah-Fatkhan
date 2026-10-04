@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation for UserProfile
+    function isValidProfile(data, userId) {
+      return data.keys().hasAll(['fullName', 'email']) &&
+        data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 100 &&
+        data.email is string && data.email.size() > 0 && data.email.size() <= 150 &&
+        (!('totalBalance' in data) || data.totalBalance is number) &&
+        (!('privacyMode' in data) || data.privacyMode is bool);
+    }
+
+    // Validation for Transaction
+    function isValidTransaction(data, userId) {
+      return data.keys().hasAll(['userId', 'type', 'description', 'category', 'amount']) &&
+        data.userId == userId &&
+        (data.type == 'inflow' || data.type == 'outflow') &&
+        data.description is string && data.description.size() > 0 && data.description.size() <= 200 &&
+        data.category is string && data.category.size() > 0 && data.category.size() <= 100 &&
+        data.amount is number && data.amount > 0 &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 300)) &&
+        (!('planEnvelope' in data) || (data.planEnvelope is string && data.planEnvelope.size() <= 100)) &&
+        (!('account' in data) || (data.account is string && data.account.size() <= 100)) &&
+        (!('status' in data) || (data.status is string && data.status.size() <= 50));
+    }
+
+    // Validation for BudgetEnvelope
+    function isValidEnvelope(data, userId) {
+      return data.keys().hasAll(['userId', 'name', 'target', 'spent']) &&
+        data.userId == userId &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.target is number && data.target >= 0 &&
+        data.spent is number && data.spent >= 0 &&
+        (!('badge' in data) || (data.badge is string && data.badge.size() <= 20)) &&
+        (!('badgeType' in data) || (data.badgeType in ['info', 'warning', 'danger'])) &&
+        (!('color' in data) || (data.color is string && data.color.size() <= 50)) &&
+        (!('icon' in data) || (data.icon is string && data.icon.size() <= 50));
+    }
+
+    // Validation for FinancialCategory
+    function isValidCategory(data, userId) {
+      return data.keys().hasAll(['userId', 'name', 'type']) &&
+        data.userId == userId &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        (data.type == 'inflow' || data.type == 'outflow') &&
+        (!('icon' in data) || (data.icon is string && data.icon.size() <= 50)) &&
+        (!('color' in data) || (data.color is string && data.color.size() <= 50)) &&
+        (!('bindingEnvelope' in data) || (data.bindingEnvelope is string && data.bindingEnvelope.size() <= 100)) &&
+        (!('defaultLimit' in data) || data.defaultLimit is number);
+    }
+
+    // User Data Subcollections
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) && isValidId(userId);
+
+      // User Profile Settings
+      match /profile/{profileDoc} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidProfile(incoming(), userId);
+        allow delete: if isOwner(userId);
+      }
+
+      // Transactions
+      match /transactions/{transactionId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(transactionId) && isValidTransaction(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(transactionId) && isValidTransaction(incoming(), userId) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(transactionId);
+      }
+
+      // Budget Envelopes
+      match /envelopes/{envelopeId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(envelopeId) && isValidEnvelope(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(envelopeId) && isValidEnvelope(incoming(), userId) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(envelopeId);
+      }
+
+      // Categories
+      match /categories/{categoryId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(categoryId) && isValidCategory(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(categoryId) && isValidCategory(incoming(), userId) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(categoryId);
+      }
+    }
+  }
+}

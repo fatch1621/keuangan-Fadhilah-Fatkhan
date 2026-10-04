@@ -1,0 +1,208 @@
+{
+  "entities": {
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial transaction record for income (inflow) or expense (outflow)",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of user who owns this transaction",
+          "maxLength": 128
+        },
+        "type": {
+          "type": "string",
+          "description": "Transaction flow direction",
+          "enum": ["inflow", "outflow"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Transaction title or purpose",
+          "maxLength": 200
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes or remarks",
+          "maxLength": 300
+        },
+        "category": {
+          "type": "string",
+          "description": "Financial category pos",
+          "maxLength": 100
+        },
+        "planEnvelope": {
+          "type": "string",
+          "description": "Budget envelope allocation",
+          "maxLength": 100
+        },
+        "account": {
+          "type": "string",
+          "description": "Default funding account label",
+          "maxLength": 100
+        },
+        "amount": {
+          "type": "number",
+          "description": "Transaction amount in Rupiah"
+        },
+        "date": {
+          "type": "string",
+          "description": "Display date string",
+          "maxLength": 50
+        },
+        "time": {
+          "type": "string",
+          "description": "Display time string",
+          "maxLength": 50
+        },
+        "status": {
+          "type": "string",
+          "description": "Budget execution status",
+          "maxLength": 50
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Server timestamp of record creation",
+          "maxLength": 50
+        }
+      },
+      "required": ["userId", "type", "description", "category", "amount"]
+    },
+    "BudgetEnvelope": {
+      "title": "BudgetEnvelope",
+      "description": "Monthly budget planning envelope",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of owner user",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Envelope name",
+          "maxLength": 100
+        },
+        "target": {
+          "type": "number",
+          "description": "Allocated target budget"
+        },
+        "spent": {
+          "type": "number",
+          "description": "Amount spent from this envelope"
+        },
+        "badge": {
+          "type": "string",
+          "description": "Percentage display string",
+          "maxLength": 20
+        },
+        "badgeType": {
+          "type": "string",
+          "description": "Visual status indicator",
+          "enum": ["info", "warning", "danger"]
+        },
+        "color": {
+          "type": "string",
+          "description": "Theme color code or class",
+          "maxLength": 50
+        },
+        "icon": {
+          "type": "string",
+          "description": "Material symbols icon name",
+          "maxLength": 50
+        }
+      },
+      "required": ["userId", "name", "target", "spent"]
+    },
+    "FinancialCategory": {
+      "title": "FinancialCategory",
+      "description": "User customized financial spending or income category",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of user who owns this category",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Category name",
+          "maxLength": 100
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon identifier",
+          "maxLength": 50
+        },
+        "color": {
+          "type": "string",
+          "description": "Color name",
+          "maxLength": 50
+        },
+        "type": {
+          "type": "string",
+          "description": "Category type",
+          "enum": ["inflow", "outflow"]
+        },
+        "bindingEnvelope": {
+          "type": "string",
+          "description": "Associated planning envelope",
+          "maxLength": 100
+        },
+        "defaultLimit": {
+          "type": "number",
+          "description": "Default spending limit"
+        }
+      },
+      "required": ["userId", "name", "type"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile and portfolio settings",
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string",
+          "description": "Display name of user",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address",
+          "maxLength": 150
+        },
+        "totalBalance": {
+          "type": "number",
+          "description": "Current liquid balance in IDR"
+        },
+        "privacyMode": {
+          "type": "boolean",
+          "description": "Whether balance is hidden"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last profile update timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["fullName", "email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/profile/settings": {
+      "schema": "UserProfile",
+      "description": "Private settings and balance for the user"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "User income and expense transactions"
+    },
+    "/users/{userId}/envelopes/{envelopeId}": {
+      "schema": "BudgetEnvelope",
+      "description": "User budget planning envelopes"
+    },
+    "/users/{userId}/categories/{categoryId}": {
+      "schema": "FinancialCategory",
+      "description": "Custom transaction categories defined by user"
+    }
+  }
+}

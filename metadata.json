@@ -1,0 +1,6 @@
+{
+  "name": "Capital Flow - Wealth Management",
+  "description": "Platform manajemen keuangan keluarga dan aset pribadi dengan fitur perencanaan anggaran amplop, pencatatan arus kas interaktif, dan kontrol akses anggota.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
